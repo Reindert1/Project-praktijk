@@ -1,0 +1,15 @@
+---
+title: "test"
+author: "Reindert Visser"
+date: "15-9-2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Research topic
+For this project thyroid disease is the main area of research. Problems with the thyroid will result in mental health problems and fatigue. 
+
+**What values will increase thyroid disease chance the most?**
