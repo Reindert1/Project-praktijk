@@ -13,4 +13,4 @@ knitr::opts_chunk$set(echo = TRUE)
 For this project thyroid disease is the main area of research. Problems with the thyroid will result in mental health problems and fatigue. 
 
 concept research question:
-**What values will increase thyroid disease chance the most?**
+**What combination of values will increase the change of thyroid disease?**
