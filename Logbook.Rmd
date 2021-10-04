@@ -23,8 +23,9 @@ For this project thyroid disease is the main area of research. Problems with the
 
 Which will bring the research question:
 
-**Is it possible to predict the type of thyroid disease by using machine learning, looking at expression values, medicine usage and external factors?**
+**Is it possible to predict if a person has thyroid disease by using machine learning, looking at expression values, medicine usage and external factors?**
 
+With machine learning, great amounts of data can be loaded up and patterns can be made up from that. When the algorithm encounters new data, these patterns can be identified and based on earlier data; machine learning will become better with more training data. Since the data has a lot of instances, machine learning will be a great tool to use. Since the data has a Sick column, it's either True or False. So this is supervised learning with classification on Sick. Because this is what a patient will look for. 
 
 ## Readying the data
 Before the research can start, the data needs to be readied. The data has a lot of information from various topics, such as age, sex but also medicine usage and external factors. 
@@ -37,8 +38,8 @@ The labels from the variable `my_labels` were used from the disclosed informatio
 ```{r loading the data}
 my_data <- read.table("data/thyroid0387.data", sep = ",", header=F, na="?")
 my_labels <- read.table("data/labels.txt", sep="\n", header=F)
-
 colnames(my_data) <- as.vector(my_labels[[1]])
+
 (head(dplyr::as_tibble(my_data), n =5))
 ```
 The data will be loaded using the `read.table` R build-in function. The data does not have a header and uses a `,` as separator. NA (Not available) is defined with a `?` in the data. Not every instance (patients) have a specific type of thyroid disease, most of these conditions are labelled with `False`. For the hormone measurement columns, these columns form a combination. The hormone name is simply a true or false, while the measured value is the exact amount of hormone expression measured. If there is no hormone expression measured, it will default to NA. This will not form a big issue since the hormone column gives enough information to work with.
@@ -81,13 +82,26 @@ The remaining columns are about external factors. Where the body has either abno
 ## Visualizing the data
 Plotting the data is the fastest way to give a visual view of the data. This can be done by all sorts of ways, since the dataset is mostly categorical; it will be hard to make graphs. Most of the visualization will be done through tables, due to the lack of numeric values. 
 
+```{r barplot sick}
+ggplot(data = my_data, mapping = aes(x = sick)) +
+  geom_bar(aes(fill = sick)) +
+  ggtitle("Amount of patients in the data") +
+         labs(caption = "Data source: sick column") +
+         xlab("Sick") +
+         ylab("Frequency in dataset")
+```
+
+The great majority of the instances in the data are not patients. Only around 3% of the instances are patients. Which might become tricky to correctly diagnose the real patients according to their thyroid values.
+
+
 One of the main factors in the data is sex, men tend to go less to the doctor. Since thyroid involves many mental problems, fatigue and eating disorders there will be a difference between sex.
 ```{r barplot sexes}
 ggplot(data = my_data, mapping = aes(x = sex)) +
   geom_bar(aes(fill = sex)) +
   ggtitle("Instances and their sex") +
          xlab("sex") +
-         ylab("Frequency in dataset")
+         ylab("Frequency in dataset") +
+         labs(caption = "Data source: patients' sex in the dataset")
 ```
 
 As predicted there are more female instances in the data. There are also people that did not want to specify their sex, these instances are labelled under NA in the data.
@@ -101,6 +115,7 @@ ggplot(data = my_data,
   ggtitle("Types of diagnosis per sex") +
   xlab("Sexes") +
   ylab("Diagnose letters") +
+  labs(caption = "Data source: sex and diagnose columns") +
   theme_minimal()
 ```
 
@@ -123,13 +138,25 @@ ggplot(data = my_data,
   ggtitle("Thyroxine usage and patient data") +
   xlab("Patient using thyroxine medication") +
   ylab("Measured thyroxine in testing") +
+  labs(caption = "Data source: thyroxine usage") +
   theme_minimal()
-
-
 ```
 
-As seen, the patients that use thyroxine actually translates really well to the data. Due to the scope of the data and the big amounts of instances, it might look insignificant. But medication proves results in our data
+As seen, the patients that use thyroxine actually translates really well to the data. Due to the scope of the data and the big amounts of instances, it might look insignificant. But medication proves results in our data.
 
+
+Overall the data looks really good, but if you look a bit closer, there is something strange going on in the data. The age column has some outliers, 3 to be exact. Two persons are in their eight thousands' and one person is over four hundred years old. There must have gone something wrong with these values, since it's biologically impossible to be this age. These values need to be either removed or edited.
+
+```{r age boxplot}
+ggplot(my_data, aes(y = age, x=as.factor("Patients"))) +
+  geom_boxplot() +
+  ggtitle("Patients and their ages within the data") +
+  xlab("") +
+  ylab("Age spread") +
+  labs(caption = "Data source: patients' ages from the data")
+```
+
+The instances with unnatural ages are now edited to only use the first two digits. If someone would say fourty and a half, and entered it like 40.5; the values combined will be 405 wich enters the range of one of the instance's age. More on this in results. 
 
 \begin{thebibliography}{9}
 \bibitem{synthesis}
