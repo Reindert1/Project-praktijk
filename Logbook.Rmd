@@ -129,7 +129,7 @@ As shown above, not everyone in the dataset is a patient. Some diagnosis are mor
 
 
 Another common medicine that helps thyroid patients with their problems is thyroxine. This is additional TT4 hormones that will help the body maintain or keep the cycle it is currently in. But how do these effects translate to the patient data set:
-```{r Diagnosis thyroxine}
+```{r diagnosis thyroxine}
 ggplot(data = my_data, 
   mapping= aes(x = on_thyroxine, y= TT4_measured)) +
   geom_jitter(width = 0.4, height = 0.4) +
@@ -145,7 +145,7 @@ ggplot(data = my_data,
 As seen, the patients that use thyroxine actually translates really well to the data. Due to the scope of the data and the big amounts of instances, it might look insignificant. But medication proves results in our data.
 
 
-Overall the data looks really good, but if you look a bit closer, there is something strange going on in the data. The age column has some outliers, 3 to be exact. Two persons are in their eight thousands' and one person is over four hundred years old. There must have gone something wrong with these values, since it's biologically impossible to be this age. These values need to be either removed or edited.
+Overall the data looks really good, but if you look a bit closer, there is something strange going on in the data. The age column has some outliers, 3 to be exact. Two persons are in their nine thousands' and one person is over four hundred years old. There must have gone something wrong with these values, since it's biologically impossible to be this age. These values need to be either removed or edited.
 
 ```{r age boxplot}
 ggplot(my_data, aes(y = age, x=as.factor("Patients"))) +
@@ -157,6 +157,69 @@ ggplot(my_data, aes(y = age, x=as.factor("Patients"))) +
 ```
 
 The instances with unnatural ages are now edited to only use the first two digits. If someone would say fourty and a half, and entered it like 40.5; the values combined will be 405 wich enters the range of one of the instance's age. More on this in results. 
+
+
+Now that the unnatural ages have been modified, the data is now clean and seems accurate with the normal age of people. The best way to visualize this, is via a boxplot. To directly show the mean and the quartiles within the age distribution.
+
+```{r boxplot of age distribution}
+ggplot(my_data, aes(y = age, x=as.factor("Patients"))) +
+  geom_boxplot() +
+  ggtitle("Patients and their ages within the data") +
+  xlab("") +
+  ylab("Age spread in years") +
+  labs(caption = "Data source: patients' ages from the data")
+```
+
+There are no extreme outliers any more and this is believable. Since it is biological impossible to have such extreme ages. Most of the instances have an age of round 54 years old. While the third quantile leans a bit more towards the older age, since it does not align with the 75 year line.
+
+
+To finalize the analysis, there are the hormone columns. There are six of these columns, with numeric values and they visualize the expression value. With a boxplot all the additional information about the data will be showed.
+
+```{r hormone expressions}
+ggplot(my_data, aes(y = TT4, x= as.factor("T4") )) +
+  geom_boxplot() +
+  ggtitle("The measured T4 of patients") +
+  xlab("") +
+  ylab("Expression value of the T4 hormone") +
+  labs(caption = "Data source: patients' expression values from the data")
+
+
+```
+
+There are some outliers in this column, but because this is on the big scale of thousands of instances. This effect is not significant. For this reason, the outliers won't be normalized. Because the gained effect won't change the outcome.
+
+
+# Machine learning
+This is the most important part of the whole process. To see if an algorithm can identify thyroid patients from their expression values. 
+
+
+## Type 1 and type 2 errors
+There are two types of errors, the type-1 error and type-2 errors. The type-1 error is simply a false alarm. Where the algorithm incorrectly said `Yes`, when it should've been a `No`. The type-2 error is a underestimation or a simply a miss, where the algorithm incorrectly said `No` where it should have `Yes`. In this case for type-1, it is a patients that is diagnosed sick that is actually healthy. For the type-2 error, it is a patient that is incorrectly declared healthy, while actually being sick. 
+
+Since the dataset has a lot of patients, where the sick patients are more important. Not only because of the minority but also the sick need to get diagnosed properly. Because around the 90% is healthy, the false positives need to be as low as possible. The patients need to be correctly identified, but the algorithm doesn't need to go too harsh on the healthy instances. 
+
+
+## Algorithm
+The overall result of the machine learning process is not valid. Due to the skewness of the data, ZeroR will get 97% correct by simply saying False. For OneR will make illogical models, for example "if age is not NA, sick is false." Due to the lack of actual patients in the dataset, the algorithm will won't do a good job on actual patients. The J48 tree will make a simple model with everything resulting in False. NaiveBayes will try, but perform less than zeroR. The only way to get an acceptable score with an actual algorithm is by overfitting on the trainings data. Unfortunately, this won't work for new instances. So the data needs to be trimmed down a bit. Since the ratio is around 8000 healthy and 200 sick, the amount of healthy instances needs to be brought down. While the patient amount should get more weight. 
+
+The extra weight for the sick class, will be done by making a dedicated class column. So there is a sick column, and an additional class column. The only differences are that the NAs will be taken out, so there is a somewhat clean column. There is still a large number of healthy instances, to bring this down way more; around 60% of the healthy instances will be removed. Now the data has 3772 instances, where around 200 instances are sick. With the extra weight of another class column, the results are now a lot better. 
+
+With the newly made dataset, all algorithms are tested with 10-fold cross validation (not training data). ZeroR keeps performing good, ZeroR will now do 93% correct by simply saying healthy to everyone. But now OneR will do a better job and make an actual model, and will have 96% correct and will base the model on T3 expression. But the J48 tree will do 98.6% correct, with 10-fold cross validation and a minimum number of objects of 10. Picking a number higher will lower the correctly diagnosed sick instances. Picking a lower number will cause overfitting and resulting in more incorrectly diagnosed sick instances. So 10 seems to be a perfect option. Increasing or decreasing the minimal number of objects drastically, gives about the same results but different decimals. But there is some mild variation in correctly diagnosed sick instances. Which proves that this model is surprisingly functional. Due to this not being trainings data, this tree should be valid in a more realistic scenario. From the 231 patients, 28 are diagnosed incorrectly healthy. With the massive skewness of this data, only having 231 sick instances, this is a good result. The cleaned and trimmed data can be found under `data/thyroid_final.arff`.
+
+The J48 tree visualized by the Weka Tree visualize function. 
+![](J48_tree.png)
+
+This algorithm performs the best, since it diagnoses the most sick instances correct without a lot of False Positives. The False Positives are a lot worse, since the instance is wrongfully judged healthy. A False Negative also has effects, but after a hypothetical medical investigation; the patient will be proven healthy. While a real patient's condition can worsen. The tree also seems logical, since it uses the most obvious columns. An actual doctor would also check hormone expression, then medicine usage and finally the external factors. 
+
+
+## Algorithm performance
+Multiple test results have been run, the most important factors are displayed under the columns. 
+```{r}
+Openend_ML_results <- readxl::read_xlsx("ML_results.xlsx")
+print(Openend_ML_results)
+```
+
+Using the function `read_xlsx`` there is a simple way to open an Excel file and displaying the file as a tibble. The J48-Tree proves to be best, since it has the lowest amount of false negatives and false positives. On top of that, it also runs the best with true negatives.
 
 \begin{thebibliography}{9}
 \bibitem{synthesis}

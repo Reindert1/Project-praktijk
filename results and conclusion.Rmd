@@ -76,7 +76,7 @@ The original data has class labels. Since the instances are patients and Sick is
 To conclude the research project, the original data was relatively clean. Due to the nature of the data, there was little room for outliers and extreme values. The amount of NAs are also relatively low and all relevant columns for the thyroid have been included in the data. External factors are also included and these columns are a great addition to the credibility of the dataset. So the results of the algorithm are valid, biologically and human errors have been filtered out. 
 
 
-## Recommendation
+## Future research
 For a possible follow-up machine learning project, the effects of medicine could be taken into account. Of all the sick instances, how could the expression of the hormones be brought into the range of healthy people. This way the dose can be exact for every patient and machine learning can determine what values would be most beneficial for the patient. The same dataset can be used again, only the algorithm becomes way more complex. More maths is involved and the algorithm is tested on more various levels, in more ways than just class label prediction. This algorithm will have a less harder time, since it could be designed to help sick patients. With this research project, an simple algorithm like zeroR will say "Not sick" to all instances and have around 80% correct. This algorithm needs to calculate the hormone up scaling per patient to bring them into more healthy ranges, taking into account all healthy instances. 
 
 
