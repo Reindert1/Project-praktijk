@@ -13,7 +13,6 @@ library(pander)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-
 ```
 
 
@@ -35,7 +34,7 @@ When initially downloaded, the data had an additional column. This was the patie
 
 The labels from the variable `my_labels` were used from the disclosed information in `data/thyroid0387.names`. Except the additional text and explanation. 
 
-```{r loading the data}
+```{r loading the data, fig.cap="A peek in the thyroid dataset."}
 my_data <- read.table("data/thyroid0387.data", sep = ",", header=F, na="?")
 my_labels <- read.table("data/labels.txt", sep="\n", header=F)
 colnames(my_data) <- as.vector(my_labels[[1]])
@@ -46,46 +45,37 @@ The data will be loaded using the `read.table` R build-in function. The data doe
 
 For the label file, the data does not have a header either. The separator is a `\n` and there are no NA's. This data is used to overwrite the current column names with the more easy to understand and practical names.
 
+```{r Total amount of NA, echo=FALSE, fig.cap="Amounts of NA found in the data."}
+knitr::kable(sapply(my_data, function(x) sum(is.na(x))))
+```
+
+Only the sex column has a lot of NAs, this could be because people wouldn't like to include their gender. There are also a lot of NAs in the hormone columns.
 
 ## Exploring the data
 For the majority of the data, the data is categorical binary data. Which indicates it's either a yes or a no, 1 or 0, True or False. But not all, there are also a few numeric values; which are intervals.
 
 The thyroid plays a big part in the endocrine system, it gives off multiple hormones to regulate the body. There are multiple hormones that the thyroid can give off. The values are tests in order to measure the amount of hormone in the blood. Since most of the hormones transport with blood cells, the thyroid values are testable. If there is a value measured, the default false will become true. With the matching value in the "Measured" column. \cite{synthesis} 
 
-- **TSH** (thyroid stimulating hormone): this hormone helps the thyroid release the T3 and T4 hormones. Without TSH, the thyroid would not be able to function at all. If there is too much TSH, the thyroid isn't releasing enough T3 and T4. TSH is released from the hypothalamus and targets the thyroid. 
 
-- **T3** (triiodothyronine): is one of the two thyroid hormones, the hormones will influence each other and affect a lot of different processes in the body. Such as metabolism of glucose, the breakdown of cholesterol or increasing the heart rate. 
+```{r codebook, fig.cap="Codebook of all the columns from the data"}
+Openend_codebook_results <- readxl::read_xlsx("codebook.xlsx")
+knitr::kable(Openend_codebook_results)
+```
+ 
 
-- **T4** (thyroxine): this is the other hormone that will cooperate with the T3 hormone. They have the same function and are involved in the same general processes of the body: Metabolism, growth and increased catecholamine. \cite{hormone information}
+ Hormone information and testing is found on: \cite{hormone information}
 
-All these hormones can be found with tests, in order to prove activity, compare the expression values or prove absence. The test results will be displayed under the measured column in the data, which is continuous data. 
-
-- **T3 test**: will measure the amount of T3 in the blood. Since all transport of the thyroid hormones is done via blood cells, this will give an accurate amount of hormones.
-
-- **TT4 test**: will measure the total amount of free T4 and bound to blood T4. Since there are two types of T4, the way that it's used can differ. It can be bound to the blood or roam in the fluid. There for it is also provable by the test. 
-
-- **T4U test**: will measure the amount of T4 Uptake, which tests the usage of available T4.
-
-- **TFI test**: will measure the amount of Free T4, Total Free (T4) Index. This can range between 0.7-1.9 nanogram per decilitre of blood.
-
-- **TBG test**: will measure the amount of TBG (thyroxine-binding globulin) enzymes, which is cleaved to produce the T4 hormone. Which means this is an indirect test to measure T4. \cite{hormone tests}
+All these hormones can be found with tests, in order to prove activity, compare the expression values or prove absence. The test results will be displayed under the measured column in the data, which is continuous data. \cite{hormone tests}
 
 
-The remaining columns are about external factors. Where the body has either abnormalities or lack of hormones/body resources. These include the following columns:
-
-- **Lithium**: this is an element that circulates in the body and helps different processes. Patients can take extra to stimulate the thyroid and becoming more active. Which will result in true in the data.
-
-- **Goitre**: a major increase in size of the thyroid or local swelling. Which can be diagnosed, if this is the case then the value is true in the data.
-
-- **Hypopituitary**: is a rare case of the pituitary gland does not produce enough hormones. \cite{hypo}
+The remaining columns are about external factors. Where the body has either abnormalities or lack of hormones/body resources.\cite{hypo}
 
 ## Visualizing the data
 Plotting the data is the fastest way to give a visual view of the data. This can be done by all sorts of ways, since the dataset is mostly categorical; it will be hard to make graphs. Most of the visualization will be done through tables, due to the lack of numeric values. 
 
-```{r barplot sick}
+```{r barplot sick, fig.cap="The amount of sick instances in the thyroid dataset."}
 ggplot(data = my_data, mapping = aes(x = sick)) +
   geom_bar(aes(fill = sick)) +
-  ggtitle("Amount of patients in the data") +
          labs(caption = "Data source: sick column") +
          xlab("Sick") +
          ylab("Frequency in dataset")
@@ -95,24 +85,28 @@ The great majority of the instances in the data are not patients. Only around 3%
 
 
 One of the main factors in the data is sex, men tend to go less to the doctor. Since thyroid involves many mental problems, fatigue and eating disorders there will be a difference between sex.
-```{r barplot sexes}
+```{r barplot sexes, fig.cap="Sex distribution in the dataset."}
 ggplot(data = my_data, mapping = aes(x = sex)) +
   geom_bar(aes(fill = sex)) +
-  ggtitle("Instances and their sex") +
          xlab("sex") +
          ylab("Frequency in dataset") +
          labs(caption = "Data source: patients' sex in the dataset")
 ```
 
-As predicted there are more female instances in the data. There are also people that did not want to specify their sex, these instances are labelled under NA in the data.
+As predicted there are more female instances in the data. There are also people that did not want to specify their sex, these instances are labelled under the 400 NA in the data.
+
+There are many types of diagnosis, in varying degree of frequency. This will give insight in the distribution of the dataset.
+```{r frequency in diagnose, fig.cap="Frequency in different diagnosis across the dataset."}
+pander(table(my_data$Diagnose_letter))
+```
+As shown above, not everyone in the dataset is a patient. Some diagnosis are more common than others, a few cases are really rare on a scale of nine thousand instances.
 
 Since there are differences between sexes, not only body but also in hormones. The thyroid might act different, this might affect the effects people feel and how they respond to this.
-```{r Diagnosis per sex}
+```{r Diagnosis per sex, fig.cap="Different types of diagnosis and sexes relation."}
 ggplot(data = my_data, 
   mapping= aes(x = sex, y= Diagnose_letter)) +
   geom_point(col= "blue", alpha = 0.2) +
   geom_smooth(method="loess", se=FALSE) +
-  ggtitle("Types of diagnosis per sex") +
   xlab("Sexes") +
   ylab("Diagnose letters") +
   labs(caption = "Data source: sex and diagnose columns") +
@@ -121,21 +115,14 @@ ggplot(data = my_data,
 
 Not all males have the same problems as females, some more frequent then others. NA is added this time to give a general overview of the data.
 
-There are many types of diagnosis, in varying degree of frequency. This will give insight in the distribution of the dataset.
-```{r frequency in diagnose}
-pander(table(my_data$Diagnose_letter))
-```
-As shown above, not everyone in the dataset is a patient. Some diagnosis are more common than others, a few cases are really rare on a scale of nine thousand instances.
-
 
 Another common medicine that helps thyroid patients with their problems is thyroxine. This is additional TT4 hormones that will help the body maintain or keep the cycle it is currently in. But how do these effects translate to the patient data set:
-```{r diagnosis thyroxine}
+```{r diagnosis thyroxine, fig.cap="Amount of thyroxine users in the dataset."}
 ggplot(data = my_data, 
   mapping= aes(x = on_thyroxine, y= TT4_measured)) +
   geom_jitter(width = 0.4, height = 0.4) +
   geom_point(col= "blue", alpha = 0.2) +
   geom_smooth(method="loess", se=FALSE) +
-  ggtitle("Thyroxine usage and patient data") +
   xlab("Patient using thyroxine medication") +
   ylab("Measured thyroxine in testing") +
   labs(caption = "Data source: thyroxine usage") +
@@ -147,43 +134,29 @@ As seen, the patients that use thyroxine actually translates really well to the 
 
 Overall the data looks really good, but if you look a bit closer, there is something strange going on in the data. The age column has some outliers, 3 to be exact. Two persons are in their nine thousands' and one person is over four hundred years old. There must have gone something wrong with these values, since it's biologically impossible to be this age. These values need to be either removed or edited.
 
-```{r age boxplot}
+The instances with unnatural ages are now edited to only use the first two digits. If someone would say fourty and a half, and entered it like 40.5; the values combined will be 405 wich enters the range of one of the instance's age. More on this in results. 
+
+```{r age boxplot, fig.cap="Patients and their age distribution within the data"}
 ggplot(my_data, aes(y = age, x=as.factor("Patients"))) +
   geom_boxplot() +
-  ggtitle("Patients and their ages within the data") +
   xlab("") +
   ylab("Age spread") +
   labs(caption = "Data source: patients' ages from the data")
 ```
 
-The instances with unnatural ages are now edited to only use the first two digits. If someone would say fourty and a half, and entered it like 40.5; the values combined will be 405 wich enters the range of one of the instance's age. More on this in results. 
-
-
 Now that the unnatural ages have been modified, the data is now clean and seems accurate with the normal age of people. The best way to visualize this, is via a boxplot. To directly show the mean and the quartiles within the age distribution.
-
-```{r boxplot of age distribution}
-ggplot(my_data, aes(y = age, x=as.factor("Patients"))) +
-  geom_boxplot() +
-  ggtitle("Patients and their ages within the data") +
-  xlab("") +
-  ylab("Age spread in years") +
-  labs(caption = "Data source: patients' ages from the data")
-```
 
 There are no extreme outliers any more and this is believable. Since it is biological impossible to have such extreme ages. Most of the instances have an age of round 54 years old. While the third quantile leans a bit more towards the older age, since it does not align with the 75 year line.
 
 
 To finalize the analysis, there are the hormone columns. There are six of these columns, with numeric values and they visualize the expression value. With a boxplot all the additional information about the data will be showed.
 
-```{r hormone expressions}
+```{r hormone expressions, fig.cap="Visualizing a boxplot of the T4 hormone expression values."}
 ggplot(my_data, aes(y = TT4, x= as.factor("T4") )) +
   geom_boxplot() +
-  ggtitle("The measured T4 of patients") +
   xlab("") +
   ylab("Expression value of the T4 hormone") +
   labs(caption = "Data source: patients' expression values from the data")
-
-
 ```
 
 There are some outliers in this column, but because this is on the big scale of thousands of instances. This effect is not significant. For this reason, the outliers won't be normalized. Because the gained effect won't change the outcome.
@@ -200,26 +173,48 @@ Since the dataset has a lot of patients, where the sick patients are more import
 
 
 ## Algorithm
-The overall result of the machine learning process is not valid. Due to the skewness of the data, ZeroR will get 97% correct by simply saying False. For OneR will make illogical models, for example "if age is not NA, sick is false." Due to the lack of actual patients in the dataset, the algorithm will won't do a good job on actual patients. The J48 tree will make a simple model with everything resulting in False. NaiveBayes will try, but perform less than zeroR. The only way to get an acceptable score with an actual algorithm is by overfitting on the trainings data. Unfortunately, this won't work for new instances. So the data needs to be trimmed down a bit. Since the ratio is around 8000 healthy and 200 sick, the amount of healthy instances needs to be brought down. While the patient amount should get more weight. 
+The overall result of the machine learning process is not valid. Due to the skewness of the data, ZeroR will get 97% correct by simply saying False. For OneR will make illogical models, for example "if age is not NA, sick is false." Due to the lack of actual patients in the dataset, the algorithm will won't do a good job on actual patients. The J48 tree will make a simple model with everything resulting in False. NaiveBayes will try, but perform less than zeroR. The only way to get an acceptable score with an actual algorithm is by overfitting on the trainings data. Unfortunately, this won't work for new instances. So the data needs to be trimmed down a bit. Since the ratio is around 9000 healthy and 200 sick, the amount of healthy instances needs to be brought down. While the patient amount should get more weight. 
 
 The extra weight for the sick class, will be done by making a dedicated class column. So there is a sick column, and an additional class column. The only differences are that the NAs will be taken out, so there is a somewhat clean column. There is still a large number of healthy instances, to bring this down way more; around 60% of the healthy instances will be removed. Now the data has 3772 instances, where around 200 instances are sick. With the extra weight of another class column, the results are now a lot better. 
 
 With the newly made dataset, all algorithms are tested with 10-fold cross validation (not training data). ZeroR keeps performing good, ZeroR will now do 93% correct by simply saying healthy to everyone. But now OneR will do a better job and make an actual model, and will have 96% correct and will base the model on T3 expression. But the J48 tree will do 98.6% correct, with 10-fold cross validation and a minimum number of objects of 10. Picking a number higher will lower the correctly diagnosed sick instances. Picking a lower number will cause overfitting and resulting in more incorrectly diagnosed sick instances. So 10 seems to be a perfect option. Increasing or decreasing the minimal number of objects drastically, gives about the same results but different decimals. But there is some mild variation in correctly diagnosed sick instances. Which proves that this model is surprisingly functional. Due to this not being trainings data, this tree should be valid in a more realistic scenario. From the 231 patients, 28 are diagnosed incorrectly healthy. With the massive skewness of this data, only having 231 sick instances, this is a good result. The cleaned and trimmed data can be found under `data/thyroid_final.arff`.
 
-The J48 tree visualized by the Weka Tree visualize function. 
-![](J48_tree.png)
+ 
+![The J48 tree visualized by the Weka 3.8.5 Tree visualize function.](J48_tree.png)
 
 This algorithm performs the best, since it diagnoses the most sick instances correct without a lot of False Positives. The False Positives are a lot worse, since the instance is wrongfully judged healthy. A False Negative also has effects, but after a hypothetical medical investigation; the patient will be proven healthy. While a real patient's condition can worsen. The tree also seems logical, since it uses the most obvious columns. An actual doctor would also check hormone expression, then medicine usage and finally the external factors. 
 
 
 ## Algorithm performance
 Multiple test results have been run, the most important factors are displayed under the columns. 
-```{r}
+```{r algorithm performance}
 Openend_ML_results <- readxl::read_xlsx("ML_results.xlsx")
 print(Openend_ML_results)
 ```
 
 Using the function `read_xlsx`` there is a simple way to open an Excel file and displaying the file as a tibble. The J48-Tree proves to be best, since it has the lowest amount of false negatives and false positives. On top of that, it also runs the best with true negatives.
+
+## ROC-Curve
+Visualizing the algorithm results can be done via the ROC-Curve. This is a graph of sensitivity as function of specificity, showing how well the algorithm can judge. With 1 being absolutely perfect, judging 100% correctly
+
+Running the J48-algorithm with 10-fold cross validation, using the optimal 10 minimal number of objects. With the Weka 3.8.5 Experimenter function, rerunning this test 100 times. Generating a total of 1000 trees,
+
+![ROC-Curve graph of the J48 runs](ROC_Curve.png)
+
+The ROC-Curve comes very close to the top left corner. Which proves that the algorithm performs really well, with an area under the curve of 0.96. An algorithm that has an area under the curve of 1, wouldn't be realistic, so this result is realistic and reasonable. The results are also valid, since there are a lot of trees created and validated, this eliminated the possibility for an "lucky" seed. \cite{ROC}
+
+## Meta-learners 
+Combining multiple algorithms and bundling the combined results, can give a very diverse view on the data. With voting, multiple results are joined together and picking the most frequent label. While boosting uses multiple algorithms in an completely different way. With an algorithm being trained on the others mistakes, weighting the wrong instances more. In order to not make the same mistakes again. 
+
+
+Bagging with bootstrapped data, using REPTree will generate multiple trees with each slightly different data. The bagging algorithm performs well, because it uses the tree structuring, just like J48. Bagging will get an accuracy of 98.4% and an error rate of 1.6%. Using the bagging algorithm with REPTree and it's default settings.
+
+Stacking is using the same algorithm with slightly tweaked seeds, the same algorithm will be run multiple times. Using stacking with OneR with default settings, will give an accuracy 93.8% and an error rate of 6.2%. This sounds high, but it is the same output of ZeroR and diagnoses everyone incorrectly healthy. Stacking J48 will give the same output with judging everyone incorrectly healthy.
+
+Boosting will use multiple of the same algorithms designed to fix each other's mistakes. If an algorithm performs 50% correct and 50% wrong, another algorithm will be specialized to fix the 50% wrong instances. Running this on the thyroid data, an accuracy of 95.8% with OneR. OneR algorithm is trained to fix the other OneR's mistakes. So this is a good way to get valid results with no luck involved. 
+
+
+
 
 \begin{thebibliography}{9}
 \bibitem{synthesis}
@@ -233,6 +228,9 @@ Shahid, A. H., Singh, M. P., Raj, R. K., Suman, R., Jawaid, D., Alam, M. (2019).
 
 \bibitem{hypo}
 James R Mulinda, Arthur B Chausmer, Francisco Talavera \textit{Hypopituitary Hypopituitarism Causes, Symptoms and Treatment} 2018, January 3rd. EMedicineHealth. $https://www.emedicinehealth.com/hypopituitary/article_em.htm$
+
+\bibitem{ROC}
+Swets, J. A. (1996): Signal detection theory and ROC analysis in psychology and diagnostics: Collected papers. Scientific psychology series. Hillsdale, NJ, US: Lawrence Erlbaum Associates, Inc.
 
 \end{thebibliography}
 
