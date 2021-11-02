@@ -30,7 +30,7 @@ The data was originally gathered from Garvan Institute. Consisting of 9172 recor
 The data is all about people and their thyroid values. All of the hormones have been measured, but also external factors are accounted for. Such as medication, a swollen thyroid or maybe a tumour. These factors affect the hormone cycle of the thyroid, changing a persons mental health. The data has a lot of instances, all of these columns contain a true or false. The patient uses medication or not for example. If the specific hormones (T3 and T4) are measured, the expression value is noted under the <hormone>_measured column. 
 
 ```{r codebook, echo=FALSE}
-Openend_codebook_results <- readxl::read_xlsx("codebook.xlsx")
+Openend_codebook_results <- readxl::read_xlsx("resources/codebook.xlsx")
 knitr::kable(Openend_codebook_results, caption="Codebook of all the columns from the data")
 ```
 
@@ -117,14 +117,14 @@ Now that the data has been filtered of the outlying ages, the data looks a lot m
 ## Machine learning
 Multiple algorithms have been run, but certain algorithms performed better than others. Because of the way the algorithms work.
 
-![The J48 tree visualized by the Weka 3.8.5 Tree visualize function.](J48_tree.png)
+![The J48 tree visualized by the Weka 3.8.5 Tree visualize function.](resources/J48_tree.png)
 
 After multiple runs, with cross validations and no randomness factors or "lucky seeds"; the J48 tree algorithm performed the best out of them all.
 
 
 Multiple test results have been run, the most important factors are displayed under the columns. 
 ```{r algorithm performance}
-Openend_ML_results <- readxl::read_xlsx("ML_results.xlsx")
+Openend_ML_results <- readxl::read_xlsx("resources/ML_results.xlsx")
 print(Openend_ML_results)
 ```
 The J48-Tree proves to be best, since it has the lowest amount of false negatives and false positives. On top of that, it also runs the best with true negatives.

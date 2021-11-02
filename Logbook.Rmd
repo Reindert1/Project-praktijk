@@ -58,7 +58,7 @@ The thyroid plays a big part in the endocrine system, it gives off multiple horm
 
 
 ```{r codebook, fig.cap="Codebook of all the columns from the data"}
-Openend_codebook_results <- readxl::read_xlsx("codebook.xlsx")
+Openend_codebook_results <- readxl::read_xlsx("resources/codebook.xlsx")
 knitr::kable(Openend_codebook_results)
 ```
  
@@ -180,7 +180,7 @@ The extra weight for the sick class, will be done by making a dedicated class co
 With the newly made dataset, all algorithms are tested with 10-fold cross validation (not training data). ZeroR keeps performing good, ZeroR will now do 93% correct by simply saying healthy to everyone. But now OneR will do a better job and make an actual model, and will have 96% correct and will base the model on T3 expression. But the J48 tree will do 98.6% correct, with 10-fold cross validation and a minimum number of objects of 10. Picking a number higher will lower the correctly diagnosed sick instances. Picking a lower number will cause overfitting and resulting in more incorrectly diagnosed sick instances. So 10 seems to be a perfect option. Increasing or decreasing the minimal number of objects drastically, gives about the same results but different decimals. But there is some mild variation in correctly diagnosed sick instances. Which proves that this model is surprisingly functional. Due to this not being trainings data, this tree should be valid in a more realistic scenario. From the 231 patients, 28 are diagnosed incorrectly healthy. With the massive skewness of this data, only having 231 sick instances, this is a good result. The cleaned and trimmed data can be found under `data/thyroid_final.arff`.
 
  
-![The J48 tree visualized by the Weka 3.8.5 Tree visualize function.](J48_tree.png)
+![The J48 tree visualized by the Weka 3.8.5 Tree visualize function.](resources/J48_tree.png)
 
 This algorithm performs the best, since it diagnoses the most sick instances correct without a lot of False Positives. The False Positives are a lot worse, since the instance is wrongfully judged healthy. A False Negative also has effects, but after a hypothetical medical investigation; the patient will be proven healthy. While a real patient's condition can worsen. The tree also seems logical, since it uses the most obvious columns. An actual doctor would also check hormone expression, then medicine usage and finally the external factors. 
 
@@ -188,7 +188,7 @@ This algorithm performs the best, since it diagnoses the most sick instances cor
 ## Algorithm performance
 Multiple test results have been run, the most important factors are displayed under the columns. 
 ```{r algorithm performance}
-Openend_ML_results <- readxl::read_xlsx("ML_results.xlsx")
+Openend_ML_results <- readxl::read_xlsx("resources/ML_results.xlsx")
 print(Openend_ML_results)
 ```
 
@@ -199,7 +199,7 @@ Visualizing the algorithm results can be done via the ROC-Curve. This is a graph
 
 Running the J48-algorithm with 10-fold cross validation, using the optimal 10 minimal number of objects. With the Weka 3.8.5 Experimenter function, rerunning this test 100 times. Generating a total of 1000 trees,
 
-![ROC-Curve graph of the J48 runs](ROC_Curve.png)
+![ROC-Curve graph of the J48 runs](resources/ROC_Curve.png)
 
 The ROC-Curve comes very close to the top left corner. Which proves that the algorithm performs really well, with an area under the curve of 0.96. An algorithm that has an area under the curve of 1, wouldn't be realistic, so this result is realistic and reasonable. The results are also valid, since there are a lot of trees created and validated, this eliminated the possibility for an "lucky" seed. \cite{ROC}
 
