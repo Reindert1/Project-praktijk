@@ -1,7 +1,7 @@
 ---
-title: "Introduction to Machine Learning"
+title: "Using machine learning to identify thyroid diseases logbook"
 author: "Reindert Visser"
-date: "27-9-2021"
+date: "19-11-2021"
 output:
   pdf_document: default
   html_document: default
@@ -20,19 +20,21 @@ library(ggplot2)
 ## Research topic
 For this project thyroid disease is the main area of research. Problems with the thyroid will result in mental health problems and fatigue. This can be a severe problem and hard to track down. Luckily machine learning can help figure out and calculate patterns. Patterns that otherwise wouldn't be found otherwise. 
 
+The data was originally gathered from Garvan Institute. Consisting of 9172 records from 1984 to early 1987. There are 30 columns and a lot of instances. All of the thyroid related hormones have been measured, but also external factors are accounted for. Such as medication, a swollen thyroid or a tumour. These factors affect the hormone cycle of the thyroid, changing a persons mental health. The data has a lot of instances, all of these columns contain a true or false. The patient uses medication or not for example. There are only a few numeric columns, these are for the hormone expression values. If the specific hormones (T3 and T4) are measured, the expression value is noted under the <hormone>_measured column. 
+
 Which will bring the research question:
 
 **Is it possible to predict if a person has thyroid disease by using machine learning, looking at expression values, medicine usage and external factors?**
 
-With machine learning, great amounts of data can be loaded up and patterns can be made up from that. When the algorithm encounters new data, these patterns can be identified and based on earlier data; machine learning will become better with more training data. Since the data has a lot of instances, machine learning will be a great tool to use. Since the data has a Sick column, it's either True or False. So this is supervised learning with classification on Sick. Because this is what a patient will look for. 
+With machine learning, great amounts of data can be loaded up and a model can be constructed. When the algorithm encounters new data, these patterns can be identified and will help improve the model. Since the data has a lot of instances, machine learning will be a great tool to use. Since the data has a Sick column, it's either True or False. So this is supervised learning with classification on Sick. Because this is what a patient will look for. More data will help improve the model. But since there are nine thousand instances, an additional instance won't impact the model. 
 
 ## Readying the data
-Before the research can start, the data needs to be readied. The data has a lot of information from various topics, such as age, sex but also medicine usage and external factors. 
+Before the research can start, the data needs to be readied. The original data set needs to be loaded up and readied for usage.
 
 ### Loading the data
-When initially downloaded, the data had an additional column. This was the patient's case, before starting with machine learning; this needs to be removed as soon as possible. The column `Diagnose Letter` was combined with an id of the patient. This was removed using the regular expression `\[[0-9]+\]`, in order to create a true machine learning algorithm. 
+When initially downloaded, the data had an additional column. This was the patient's case, before starting with machine learning; this needs to be removed as soon as possible. The column `Diagnose Letter` was combined with an id of the patient. This was removed using the regular expression `\[[0-9]+\]`, in order to create a true machine learning algorithm. So the algorithm won't score 100% correct while training.
 
-The labels from the variable `my_labels` were used from the disclosed information in `data/thyroid0387.names`. Except the additional text and explanation. 
+The labels from the variable `my_labels` were used from the disclosed information in `data/thyroid0387.names`. Only the labels were used, not the additional text and explanation. These are used for readability and make the upcoming graphs better.
 
 ```{r loading the data, fig.cap="A peek in the thyroid dataset."}
 my_data <- read.table("data/thyroid0387.data", sep = ",", header=F, na="?")
@@ -41,9 +43,11 @@ colnames(my_data) <- as.vector(my_labels[[1]])
 
 (head(dplyr::as_tibble(my_data), n =5))
 ```
-The data will be loaded using the `read.table` R build-in function. The data does not have a header and uses a `,` as separator. NA (Not available) is defined with a `?` in the data. Not every instance (patients) have a specific type of thyroid disease, most of these conditions are labelled with `False`. For the hormone measurement columns, these columns form a combination. The hormone name is simply a true or false, while the measured value is the exact amount of hormone expression measured. If there is no hormone expression measured, it will default to NA. This will not form a big issue since the hormone column gives enough information to work with.
+The data will be loaded using the `read.table` R build-in function. The data does not have a header and uses a `,` as separator. NA (Not available) is defined with a `?` in the data. A lot of external factors such as pregnancy, medication, tumours or a psychiatrist have been taken into account. For most of the instances, this is not the case, so it is labelled with `f`. For the hormone measurement columns, these columns form a combination of name and expression value. The hormone name is simply a true or false, while the measured value is the exact amount of hormone expression measured. If there is no hormone expression measured, it will default to NA. This will not form a big issue since the hormone column gives enough information to work with.
 
 For the label file, the data does not have a header either. The separator is a `\n` and there are no NA's. This data is used to overwrite the current column names with the more easy to understand and practical names.
+
+NA values can be a problem for some algorithms, it is important to keep this in mind when preparing the data. Using `sapply` the NA values can be summed up.
 
 ```{r Total amount of NA, echo=FALSE, fig.cap="Amounts of NA found in the data."}
 knitr::kable(sapply(my_data, function(x) sum(is.na(x))))
@@ -52,10 +56,11 @@ knitr::kable(sapply(my_data, function(x) sum(is.na(x))))
 Only the sex column has a lot of NAs, this could be because people wouldn't like to include their gender. There are also a lot of NAs in the hormone columns.
 
 ## Exploring the data
-For the majority of the data, the data is categorical binary data. Which indicates it's either a yes or a no, 1 or 0, True or False. But not all, there are also a few numeric values; which are intervals.
+For the majority of the data, the data is categorical binary data. Which indicates it's either a yes or a no, 1 or 0, True or False. In the dataset these are labelled with either `t` or `f`. But not all, there are also a few numeric values. These numeric values are intervals, and can be used for counting but also used as "in between" values such as decimal numbers. 
 
-The thyroid plays a big part in the endocrine system, it gives off multiple hormones to regulate the body. There are multiple hormones that the thyroid can give off. The values are tests in order to measure the amount of hormone in the blood. Since most of the hormones transport with blood cells, the thyroid values are testable. If there is a value measured, the default false will become true. With the matching value in the "Measured" column. \cite{synthesis} 
+The thyroid plays a big part in the endocrine system, it gives off multiple hormones to regulate the body. There are multiple hormones that the thyroid can give off. The values are tests in order to measure the amount of hormone in the blood. Since most of the hormones transport with blood cells, the thyroid values are testable. If there is a value measured, the default false will become true. With the matching value in the hormone_"Measured" column. \cite{synthesis} 
 
+The complete column description is made under `codebook.xlsx`, which describes the column, name, data type, unit and description.
 
 ```{r codebook, fig.cap="Codebook of all the columns from the data"}
 Openend_codebook_results <- readxl::read_xlsx("resources/codebook.xlsx")
@@ -63,37 +68,45 @@ knitr::kable(Openend_codebook_results)
 ```
  
 
- Hormone information and testing is found on: \cite{hormone information}
-
-All these hormones can be found with tests, in order to prove activity, compare the expression values or prove absence. The test results will be displayed under the measured column in the data, which is continuous data. \cite{hormone tests}
+Hormone information and testing is found on: \cite{hormone information}
 
 
-The remaining columns are about external factors. Where the body has either abnormalities or lack of hormones/body resources.\cite{hypo}
+All these hormone expression values can be found with tests, in order to prove activity, compare the expression values or prove absence. The test results will be displayed under the measured column in the data. \cite{hormone tests}
+
+
+The remaining columns are about external factors. Where the body has either abnormalities or lack of hormones/body resources. But since thyroid effects a person's mental health, a psychiatrist is also included. But also pregnancy or a tumour, since these factors can change your life drastically. \cite{hypo}
+
+Now that the data is fully understood, know what all columns do and why it's necessary to include them, the visualization process can begin.
 
 ## Visualizing the data
-Plotting the data is the fastest way to give a visual view of the data. This can be done by all sorts of ways, since the dataset is mostly categorical; it will be hard to make graphs. Most of the visualization will be done through tables, due to the lack of numeric values. 
+Plotting the data is the fastest way to give a visual view of the data. This can be done by all sorts of ways, since the dataset is mostly categorical; it will be hard to make graphs. Since it is mostly either a `t` or `f` in the dataset. Most of the visualization will be done through tables, due to the lack of numeric values. 
 
-```{r barplot sick, fig.cap="The amount of sick instances in the thyroid dataset."}
+```{r barplot sick, fig.cap="The distribution of sick instances in the thyroid dataset."}
 ggplot(data = my_data, mapping = aes(x = sick)) +
   geom_bar(aes(fill = sick)) +
          labs(caption = "Data source: sick column") +
-         xlab("Sick") +
+         scale_x_discrete(labels=c("Healthy instances", "Sick instances")) +
+         scale_fill_discrete(labels=c("Healthy instances", "Sick instances")) +
+         xlab("Classification label") +
          ylab("Frequency in dataset")
 ```
 
-The great majority of the instances in the data are not patients. Only around 3% of the instances are patients. Which might become tricky to correctly diagnose the real patients according to their thyroid values.
+The great majority of the instances in the data are not patients. Only around 3% of the instances are patients. Which might become tricky to correctly diagnose the real patients according to their thyroid values. Since an algorithm will easily achieve a high accuracy by simple saying that all instances are healthy.
 
+Another factor in the dataset is the sex of the instance. Since thyroid involves many mental problems, fatigue and disorders, there will be a difference between sex. The pregnancy column is also not relevant for all men in the dataset. 
 
-One of the main factors in the data is sex, men tend to go less to the doctor. Since thyroid involves many mental problems, fatigue and eating disorders there will be a difference between sex.
-```{r barplot sexes, fig.cap="Sex distribution in the dataset."}
+```{r barplot sexes, fig.cap="Distribution of sexes in the dataset."}
 ggplot(data = my_data, mapping = aes(x = sex)) +
   geom_bar(aes(fill = sex)) +
-         xlab("sex") +
+         xlab("Sex of the instance") +
          ylab("Frequency in dataset") +
-         labs(caption = "Data source: patients' sex in the dataset")
+         labs(caption = "Data source: patients' sex in the dataset") +
+         scale_x_discrete(labels=c("Female", "Male", "Not included")) +
+         scale_fill_discrete(labels=c("Female", "Male", "Not included"))
+
 ```
 
-As predicted there are more female instances in the data. There are also people that did not want to specify their sex, these instances are labelled under the 400 NA in the data.
+As predicted there are more female instances in the data. There are also people that did not want to specify their sex, these instances are labelled under the 400 NA in the data. Combining this with the lack of male instances, this hurts the credibility. Where ideally it would be an even distribution.
 
 There are many types of diagnosis, in varying degree of frequency. This will give insight in the distribution of the dataset.
 ```{r frequency in diagnose, fig.cap="Frequency in different diagnosis across the dataset."}
@@ -102,22 +115,24 @@ pander(table(my_data$Diagnose_letter))
 As shown above, not everyone in the dataset is a patient. Some diagnosis are more common than others, a few cases are really rare on a scale of nine thousand instances.
 
 Since there are differences between sexes, not only body but also in hormones. The thyroid might act different, this might affect the effects people feel and how they respond to this.
-```{r Diagnosis per sex, fig.cap="Different types of diagnosis and sexes relation."}
+```{r Diagnosis per sex, fig.cap="Different types of diagnosis and relation to sex."}
 ggplot(data = my_data, 
   mapping= aes(x = sex, y= Diagnose_letter)) +
   geom_point(col= "blue", alpha = 0.2) +
   geom_smooth(method="loess", se=FALSE) +
-  xlab("Sexes") +
+  xlab("Sex of the instance") +
   ylab("Diagnose letters") +
   labs(caption = "Data source: sex and diagnose columns") +
+  scale_x_discrete(labels=c("Female", "Male", "Not included")) +
+  scale_fill_discrete(labels=c("Female", "Male", "Not included")) +
   theme_minimal()
 ```
 
 Not all males have the same problems as females, some more frequent then others. NA is added this time to give a general overview of the data.
 
 
-Another common medicine that helps thyroid patients with their problems is thyroxine. This is additional TT4 hormones that will help the body maintain or keep the cycle it is currently in. But how do these effects translate to the patient data set:
-```{r diagnosis thyroxine, fig.cap="Amount of thyroxine users in the dataset."}
+Another common medicine that helps thyroid patients with their problems is thyroxine. This is additional TT4 hormones that will help the body maintain or keep the cycle it is currently in. But some people use it to cope with problems, these people might falsely think that they are a thyroid patient.
+```{r diagnosis thyroxine, fig.cap="Distribution of thyroxine users in the dataset."}
 ggplot(data = my_data, 
   mapping= aes(x = on_thyroxine, y= TT4_measured)) +
   geom_jitter(width = 0.4, height = 0.4) +
@@ -126,36 +141,39 @@ ggplot(data = my_data,
   xlab("Patient using thyroxine medication") +
   ylab("Measured thyroxine in testing") +
   labs(caption = "Data source: thyroxine usage") +
+  scale_x_discrete(labels=c("False", "True")) +
+  scale_y_discrete(labels=c("False", "True")) +
   theme_minimal()
 ```
 
-As seen, the patients that use thyroxine actually translates really well to the data. Due to the scope of the data and the big amounts of instances, it might look insignificant. But medication proves results in our data.
+As seen, the patients that use thyroxine actually translates really well to the data. The True-True combination is proven TT4 and extra thyroid medication. Due to the scope of the data and the big amounts of instances, it might look insignificant. But there are a lot of instances where only a few are actually sick, so it is important to identify them. Thyroxine usage might be useful for the future algorithm.
 
 
-Overall the data looks really good, but if you look a bit closer, there is something strange going on in the data. The age column has some outliers, 3 to be exact. Two persons are in their nine thousands' and one person is over four hundred years old. There must have gone something wrong with these values, since it's biologically impossible to be this age. These values need to be either removed or edited.
+Overall the data looks really good, but if you look a bit closer, there is something strange going on in the data. The age column has three outliers. Two persons are in their nine thousands' and one person is over four hundred years old. There must have gone something wrong with these values, since it's biologically impossible to be this age. These values need to be either removed or edited.
 
-The instances with unnatural ages are now edited to only use the first two digits. If someone would say fourty and a half, and entered it like 40.5; the values combined will be 405 wich enters the range of one of the instance's age. More on this in results. 
+The instances with unnatural ages are now edited to only use the first two digits. If someone would say forty and a half, and entered it like "40.5". The values combined will be 405 which enters the range of one of the instance's age. All three instances are not sick so the effect will be minimal. 
 
-```{r age boxplot, fig.cap="Patients and their age distribution within the data"}
+Now that the unnatural ages have been modified, the data is now clean and seems accurate with the normal age of people. The best way to visualize this, is via a boxplot. To directly show the mean and the quartiles within the age distribution.
+
+```{r age boxplot, fig.cap="A distribution of age within the data"}
 ggplot(my_data, aes(y = age, x=as.factor("Patients"))) +
   geom_boxplot() +
   xlab("") +
-  ylab("Age spread") +
-  labs(caption = "Data source: patients' ages from the data")
+  ylab("Age spread in years") +
+  labs(caption = "Data source: patients' ages from the data") +
+  theme_minimal()
 ```
-
-Now that the unnatural ages have been modified, the data is now clean and seems accurate with the normal age of people. The best way to visualize this, is via a boxplot. To directly show the mean and the quartiles within the age distribution.
 
 There are no extreme outliers any more and this is believable. Since it is biological impossible to have such extreme ages. Most of the instances have an age of round 54 years old. While the third quantile leans a bit more towards the older age, since it does not align with the 75 year line.
 
 
 To finalize the analysis, there are the hormone columns. There are six of these columns, with numeric values and they visualize the expression value. With a boxplot all the additional information about the data will be showed.
 
-```{r hormone expressions, fig.cap="Visualizing a boxplot of the T4 hormone expression values."}
+```{r hormone expressions, fig.cap="A boxplot of the TT4 expression values."}
 ggplot(my_data, aes(y = TT4, x= as.factor("T4") )) +
   geom_boxplot() +
   xlab("") +
-  ylab("Expression value of the T4 hormone") +
+  ylab("Gene expression values") +
   labs(caption = "Data source: patients' expression values from the data")
 ```
 
@@ -173,21 +191,25 @@ Since the dataset has a lot of patients, where the sick patients are more import
 
 
 ## Algorithm
-The overall result of the machine learning process is not valid. Due to the skewness of the data, ZeroR will get 97% correct by simply saying False. For OneR will make illogical models, for example "if age is not NA, sick is false." Due to the lack of actual patients in the dataset, the algorithm will won't do a good job on actual patients. The J48 tree will make a simple model with everything resulting in False. NaiveBayes will try, but perform less than zeroR. The only way to get an acceptable score with an actual algorithm is by overfitting on the trainings data. Unfortunately, this won't work for new instances. So the data needs to be trimmed down a bit. Since the ratio is around 9000 healthy and 200 sick, the amount of healthy instances needs to be brought down. While the patient amount should get more weight. 
+### Exploring machine learning
+The overall result of the machine learning process is not valid. Due to the skewness of the data, ZeroR will get 97% correct by simply saying False. For OneR will make illogical models, for example "if age is not NA, sick is false." Due to the lack of actual patients in the dataset, the algorithm will won't do a good job on actual patients. The J48 tree will make a simple model with everything resulting in False. NaiveBayes will try, but perform significantly less than zeroR. The only way to get an acceptable score with an actual algorithm is by overfitting on the trainings data. Unfortunately, this won't work for new instances. So the data needs to be trimmed down. Since the ratio is around 9000 healthy and 200 sick, the amount of healthy instances needs to be brought down. While the patient amount should get more weight. 
 
 The extra weight for the sick class, will be done by making a dedicated class column. So there is a sick column, and an additional class column. The only differences are that the NAs will be taken out, so there is a somewhat clean column. There is still a large number of healthy instances, to bring this down way more; around 60% of the healthy instances will be removed. Now the data has 3772 instances, where around 200 instances are sick. With the extra weight of another class column, the results are now a lot better. 
 
-With the newly made dataset, all algorithms are tested with 10-fold cross validation (not training data). ZeroR keeps performing good, ZeroR will now do 93% correct by simply saying healthy to everyone. But now OneR will do a better job and make an actual model, and will have 96% correct and will base the model on T3 expression. But the J48 tree will do 98.6% correct, with 10-fold cross validation and a minimum number of objects of 10. Picking a number higher will lower the correctly diagnosed sick instances. Picking a lower number will cause overfitting and resulting in more incorrectly diagnosed sick instances. So 10 seems to be a perfect option. Increasing or decreasing the minimal number of objects drastically, gives about the same results but different decimals. But there is some mild variation in correctly diagnosed sick instances. Which proves that this model is surprisingly functional. Due to this not being trainings data, this tree should be valid in a more realistic scenario. From the 231 patients, 28 are diagnosed incorrectly healthy. With the massive skewness of this data, only having 231 sick instances, this is a good result. The cleaned and trimmed data can be found under `data/thyroid_final.arff`.
+### Running experiments
+With the newly made dataset, all algorithms are tested with 10-fold cross validation (not training data). ZeroR keeps performing good, ZeroR will now do 93% correct by simply saying healthy to everyone. But now OneR will do a better job and make an actual model, and will have 96% correct and will base the model on T3 expression. But the J48 tree will do 98.6% correct, with 10-fold cross validation and a minimum number of objects of 10. Picking a number higher will lower the correctly diagnosed sick instances. Picking a lower number will cause overfitting and resulting in more incorrectly diagnosed sick instances. So 10 seems to be a perfect option. 
+
+Increasing or decreasing the minimal number of objects drastically, gives about the same results but different decimals. But there is some mild variation in correctly diagnosed sick instances. Which proves that this model is surprisingly functional. Due to this not being trainings data, this tree should be valid in a more realistic scenario. From the 231 patients, 28 are diagnosed incorrectly healthy. With the massive skewness of this data, only having 231 sick instances, this is a good result. The cleaned and trimmed data can be found under `data/thyroid_final.arff`.
 
  
 ![The J48 tree visualized by the Weka 3.8.5 Tree visualize function.](resources/J48_tree.png)
 
-This algorithm performs the best, since it diagnoses the most sick instances correct without a lot of False Positives. The False Positives are a lot worse, since the instance is wrongfully judged healthy. A False Negative also has effects, but after a hypothetical medical investigation; the patient will be proven healthy. While a real patient's condition can worsen. The tree also seems logical, since it uses the most obvious columns. An actual doctor would also check hormone expression, then medicine usage and finally the external factors. 
+Running the J48 algorithm with the optimal options in the Weka experimenter, with 100 runs and 10-fold cross validation, the score will be in the range of 98% and 99% instances correct. This algorithm performs the best, since it diagnoses the most sick instances correct without a lot of False Positives. The False Positives are a lot worse, since the instance is wrongfully judged healthy. A False Negative also has effects, but after a hypothetical medical investigation; the patient will be proven healthy. While a real patient's condition can worsen. The tree also seems logical, since it uses the most obvious columns. An actual doctor would also check hormone expression, then medicine usage and finally the external factors. So the false positives (incorrectly classified healthy) will be weighted more, in order to force the algorithm to classify them correctly.
 
 
 ## Algorithm performance
 Multiple test results have been run, the most important factors are displayed under the columns. 
-```{r algorithm performance}
+```{r algorithm performance, fig.cap="The performance of various algorithms."}
 Openend_ML_results <- readxl::read_xlsx("resources/ML_results.xlsx")
 print(Openend_ML_results)
 ```
@@ -195,7 +217,7 @@ print(Openend_ML_results)
 Using the function `read_xlsx`` there is a simple way to open an Excel file and displaying the file as a tibble. The J48-Tree proves to be best, since it has the lowest amount of false negatives and false positives. On top of that, it also runs the best with true negatives.
 
 ## ROC-Curve
-Visualizing the algorithm results can be done via the ROC-Curve. This is a graph of sensitivity as function of specificity, showing how well the algorithm can judge. With 1 being absolutely perfect, judging 100% correctly
+Visualizing the algorithm's performance results can be done via the ROC-Curve. This is a graph of sensitivity as function of specificity, showing how well the algorithm can judge. With 1 being absolutely perfect, judging 100% correctly. But this is not realistic for the algorithm on this specific dataset.
 
 Running the J48-algorithm with 10-fold cross validation, using the optimal 10 minimal number of objects. With the Weka 3.8.5 Experimenter function, rerunning this test 100 times. Generating a total of 1000 trees,
 

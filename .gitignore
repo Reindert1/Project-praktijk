@@ -2,4 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+.gitattributes
 Project-praktijk.Rproj
+.gitignore
