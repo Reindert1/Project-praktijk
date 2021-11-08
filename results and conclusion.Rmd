@@ -3,6 +3,7 @@ title: "Using machine learning to identify thyroid diseases"
 author: "Reindert Visser"
 date: "19-11-2021"
 output: pdf_document
+extra_dependencies: ["flafter"]
 ---
 
 ```{r setup, include=FALSE}
@@ -22,7 +23,7 @@ The data was originally gathered from Garvan Institute. Consisting of 9172 recor
 
 The data is all about people and their thyroid values. All of the thyroid related hormones have been measured, but also external factors are accounted for. Such as medication, a swollen thyroid or a tumour. These factors affect the hormone cycle of the thyroid, changing a persons mental health. The data has a lot of instances, all of these columns contain a true or false. The patient uses medication or not for example. There are only a few numeric columns, these are for the hormone expression values. If the specific hormones (T3 and T4) are measured, the expression value is noted under the <hormone>_measured column. 
 
-```{r codebook, echo=FALSE}
+```{r codebook, out.height='75%', echo=FALSE}
 Openend_codebook_results <- readxl::read_xlsx("resources/codebook.xlsx")
 knitr::kable(Openend_codebook_results, caption="Codebook of all the columns from the data")
 ```
@@ -43,9 +44,10 @@ Readme and support can be directly found on: https://github.com/Reindert1/wekawr
 
 
 # Results
+## Sick distribution
 Of all the 9000 instances, only around the 200 are sick. Since sick is the most valuable column, this will become the class column. The data tells if the patient is either sick or not, so the machine learning algorithm will predict if the patient is sick or not. 
 
-```{r barplot sick, echo=FALSE, fig.cap="The distribution of sick instances in the thyroid dataset."}
+```{r barplot sick, echo=FALSE, out.height='75%', out.width='75%', fig.align='center', fig.cap="The distribution of sick instances in the thyroid dataset."}
 ggplot(data = my_data, mapping = aes(x = sick)) +
   geom_bar(aes(fill = sick)) +
          labs(caption = "Data source: sick column") +
@@ -57,16 +59,20 @@ ggplot(data = my_data, mapping = aes(x = sick)) +
 There are a lot more healthy instances than the sick instances. So in order to successfully go to the machine learning process, some trimming needs to be done. 60% of the sick instances have been deleted, this will be done at random to maintain integrity. 
 
 
+## Amounts of NA values
 Overall the data is of pretty high quality, there are a lot columns that tell you enough information. The data is relatively complete, not extreme amounts of missing values (NAs). 
 
-```{r Total amount of NA, echo=FALSE}
+```{r Total amount of NA, out.height='75%',  echo=FALSE}
 knitr::kable(sapply(my_data, function(x) sum(is.na(x))), caption = "Amounts of NA found in the data." )
 ```
+
 Only the sex column has a lot of NAs, this could be because people wouldn't like to include their gender. There are also a lot of NAs in the hormone columns.
 
-All of thyroid hormones are included in the data, and extra hormones like Thyroid stimulating hormone (TSH) are included. So it creates a complete picture of hormones. Most of the patients are healthy, only a small portion of the instances are sick, this might become a problem for the algorithm. Since the algorithm will most likely say "Not sick" and have 80% correct, while the patients with actual thyroid issues might get wrongfully diagnosed. 
 
-```{r barplot sexes, echo=FALSE, fig.cap="Distribution of sexes in the dataset."}
+## Distribution of sexes
+All of thyroid hormones are included in the data, and extra hormones like Thyroid stimulating hormone (TSH) are included. So it creates a complete picture of hormones. Most of the patients are healthy, only a small portion of the instances are sick, this might become a problem for the algorithm. Since the algorithm will most likely say "Not sick" and have 80% correct, while the patients with actual thyroid issues might get wrongfully diagnosed.
+
+```{r barplot sexes, out.height='75%', out.width='75%', fig.align='center', echo=FALSE, fig.cap="Distribution of sexes in the dataset."}
 ggplot(data = my_data, mapping = aes(x = sex)) +
   geom_bar(aes(fill = sex)) +
          xlab("Sex of the instance") +
@@ -75,11 +81,15 @@ ggplot(data = my_data, mapping = aes(x = sex)) +
          scale_x_discrete(labels=c("Female", "Male", "Not included")) +
          scale_fill_discrete(labels=c("Female", "Male", "Not included"))
 ```
+
 Since sex is a sensitive topic, the NAs have not been filtered out or filled in. This is because the column does not give a lot of information, because the ratio is not near 50/50. Editing the data will result in major integrity loss, so these instances will stay the way they are. Although it does not give an complete picture and an actual representation of the population.
 
+
+
+## Diagnosis and sex
 Since there are differences between sexes, not only body but also in hormones. The thyroid might act different, this might affect the effects people feel and how they respond to this.
 
-```{r Diagnosis per sex, echo=FALSE, fig.cap="Different types of diagnosis and relation to sex."}
+```{r Diagnosis per sex, out.height='50%', out.width='50%', fig.align='center', echo=FALSE, fig.cap="Different types of diagnosis and relation to sex."}
 ggplot(data = my_data, 
   mapping= aes(x = sex, y= Diagnose_letter)) +
   geom_point(col= "blue", alpha = 0.2) +
@@ -94,9 +104,11 @@ ggplot(data = my_data,
 Not all males have the same problems as females, some more frequent then others. NA is added this time to give a general overview of the data.
 
 
-One of the few numeric columns in the data set, are the hormone expression columns.
 
-```{r hormone expressions, echo=FALSE, fig.cap="A boxplot of the TT4 expression values."}
+## Hormone expressions
+One of the few numeric columns in the data set, are the hormone expression columns. These values are never beneath 0 and don't have a limit. 
+
+```{r hormone expressions, out.height='50%', out.width='50%', fig.align='center', echo=FALSE, fig.cap="A boxplot of the TT4 expression values."}
 ggplot(my_data, aes(y = TT4, x= as.factor("T4") )) +
   geom_boxplot() +
   xlab("") +
@@ -105,13 +117,12 @@ ggplot(my_data, aes(y = TT4, x= as.factor("T4") )) +
 ```
 The hormones are of more value since these columns are numeric. Which is why the machine learning algorithm will most likely chose these columns to start with.
 
+
 ## Cleaning data
 When it comes to the dataset, which consists of either True or False, cleaning will become an issue. There are no outliers or impossible values, so the data (when originally downloaded) is mostly clean. There are some measured columns, there are numerical values here, but there are no outliers. So this does not need a lot of work to be done. 
 
-
 The age column has a lot of outliers, there are a lot of people with inhumane ages. For example three people would be in the nine thousand, one would be eight thousand and one would be four hundred years old. This is not possible of course, these values have been modified to only use the first two digits. If someone would say "I'm forty and a half years" and write it down as 40.50. Due to the use of floats it might got mixed up and combined. To not delete the entire instance, the first two digits will be used to fix this problem. Although this is not the most accurate instance. But on a scale of eight thousand instances, this will not be weighted heavily and won't affect the data. The age of the instances makes a jump from 97 to 400 to 8000, the instances above 97 have been trimmed to their first two digits.
-
-```{r age boxplot, echo=FALSE, fig.cap="A distribution of age within the data"}
+```{r age boxplot, out.height='40%', out.width='40%', fig.align='center', echo=FALSE, fig.cap="A distribution of age within the data"}
 ggplot(my_data, aes(y = age, x=as.factor("Patients"))) +
   geom_boxplot() +
   xlab("") +
@@ -119,7 +130,9 @@ ggplot(my_data, aes(y = age, x=as.factor("Patients"))) +
   labs(caption = "Data source: patients' ages from the data") +
   theme_minimal()
 ```
+
 Now that the data has been filtered of the outlying ages, the data looks a lot more believable. Since it is not possible for a person to be 8 thousand years, there must have gone something wrong with the data. This will increase the data's credibility and makes the conclusions of the algorithm move valid. Because there is no need to take these ages into account and split them in the design later on. 
+
 
 
 ## Machine learning
@@ -135,6 +148,16 @@ Openend_ML_results <- readxl::read_xlsx("resources/ML_results.xlsx")
 knitr::kable(Openend_ML_results, caption = "Results of various machine learning algorithms")
 ```
 The J48-Tree proves to be best, since it has the lowest amount of false negatives and false positives. On top of that, it also runs the best with true negatives.
+
+
+## ROC-Curve
+Visualizing the algorithm's performance results can be done via the ROC-Curve. This is a graph of sensitivity as function of specificity, showing how well the algorithm can judge. With 1 being absolutely perfect, judging 100% correctly. But this is not realistic for the algorithm on this specific dataset.
+
+Running the J48-algorithm with 10-fold cross validation, using the optimal 10 minimal number of objects. With the Weka 3.9.5 Experimenter function, rerunning this test 100 times. Generating a total of 1000 trees,
+
+![ROC-Curve graph of the J48 runs](resources/ROC_Curve.png)
+
+The ROC-Curve comes very close to the top left corner. Which proves that the algorithm performs really well, with an area under the curve of 0.96. An algorithm that has an area under the curve of 1, wouldn't be realistic, so this result is realistic and reasonable. The results are also valid, since there are a lot of trees created and validated, this eliminated the possibility for an "lucky" seed.
 
 
 # Discussion
